@@ -1,3 +1,3 @@
-# ZenHub
+# ZenScripts
 
-A project started as a learning experience
+A Roblox scripting project started as a learning experience
