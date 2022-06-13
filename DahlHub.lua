@@ -4,7 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local NPCs = workspace.Game.Players
 local punchType
 local combo = 1
-local nclip = false;
+local nclip = false
 local lp = game.Players.LocalPlayer
 local ms = lp:GetMouse()
 local rm = getrawmetatable(game)
@@ -136,6 +136,14 @@ KeybindSection:NewKeybind("Toggle UI", "toggles ui", Enum.KeyCode.RightControl, 
 	Library:ToggleUI()
 end)
 
+KeybindSection:NewKeybind("Toggle Noclip", "Bind for Noclip", Enum.KeyCode.G, function()
+    if nclip == false then
+        nclip = true
+    elseif nclip == true then
+        nclip = false
+    end
+end)
+
 local mobdropdown = MobFarmSection:NewDropdown("Choose Mob", "Chooses the mob to autofarm", mobs, function(v) -- CREATES A MOB DROPDOWN TO CHOOSE THE MOBS (USES THE TABLE FROM THE MOBS SECTION ABOVE)
     getgenv().mob = v
 end)
@@ -232,6 +240,7 @@ MiscSection:NewToggle("Auto Shake", "Buys Protain shakes for xp boost", function
         wait() end
     end
 end)
+
 
 -- MOB FARM SECTION
 MobFarmSection:NewToggle("Mob Farm", "Toggles autofarm for mobs", function(v) -- CREATES THE START / STOP TOGGLE
