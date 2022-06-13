@@ -156,7 +156,7 @@ local shadowdropdown = ShadowSection:NewDropdown("Choose shadow", "Chooses shado
     getgenv().shadow = v
 end)
 
-MobFarmSection:NewSlider("Farm Distance", "Changes the distance you farm the enemy at", 17, 5, function(v) -- 500 (MaxValue) | 0 (MinValue)
+MobFarmSection:NewSlider("Farm Distance", "Changes the distance you farm the enemy at", 17, 8, function(v) -- 500 (MaxValue) | 0 (MinValue)
     farmdistance = v
 end)
 
