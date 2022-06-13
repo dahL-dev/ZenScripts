@@ -49,18 +49,57 @@ game:GetService("RunService").Stepped:Connect(function()
    end
 end);
 
+
+local function SaveSettings()
+    local JSON -- is nil
+    local HttpService = game:service('HttpService') 
+
+    JSON = HttpService:JSONEncode(getgenv().ColorCodes)
+
+    writefile('dahL-hub/GUISettings.txt',JSON)
+end
+
+local function LoadSettings()
+    local HttpService = game:service('HttpService')
+    
+    --use 'isfile' to check if we are reading the correct txt file
+    
+    if isfile('dahL-hub/GUISettings') then
+    --use 'readfile' to read 'TUTORIAL.txt' and decode it
+        getgenv().ColorCodes = HttpService:JSONDecode(readfile('dahL-hub/GUISettings.txt'))
+    end
+end
+
+LoadSettings()
+
+
+
+
+getgenv().ColorSettings = {
+    Color3.fromRGB();
+    Color3.fromRGB();
+    Color3.fromRGB();
+    Color3.fromRGB();
+    Color3.fromRGB()
+}
+
+getgenv().GUISettings = {
+    ["SchemeColor"] = ColorSettings[1],
+    ["Background"] = ColorSettings[2],
+    ["Header"] = ColorSettings[3],
+    ["TextColor"] = ColorSettings[4],
+    ["ElementColor"] = ColorSettings[5]
+}
+
+
+
+
 -- VARIABLES
 local mobs = {} -- MOBS TABLE
 local npcs = {}
 local locations = {} 
 local meditationspots = {}
-local themes = {
-    SchemeColor = Color3.fromRGB(0,255,255),
-    Background = Color3.fromRGB(0, 0, 0),
-    Header = Color3.fromRGB(0, 0, 0),
-    TextColor = Color3.fromRGB(255,255,255),
-    ElementColor = Color3.fromRGB(20, 20, 20)
-}
+
 
 local isFarming = false
 getgenv().mob = nil -- SELECTED MOB
@@ -115,9 +154,8 @@ end
     end)
 
 -- UI LIBRARY
-
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))() -- GETS THE UI LIBRARY
-local Window = Library.CreateLib("dahL-hub", "Midnight") -- CREATES THE WINDOW
+local Window = Library.CreateLib("dahL-hub", Midnight) -- CREATES THE WINDOW
 
 -- GUI-SETUP
 local Main = Window:NewTab("Main") -- CREATES THE MAIN TAB
@@ -186,11 +224,26 @@ MobFarmSection:NewSlider("Farm Distance", "Changes the distance you farm the ene
 end)
 
 
-for theme, color in pairs(themes) do
+for theme, color in pairs(GUISettings) do
     CustomizeSection:NewColorPicker(theme, "Change your "..theme, color, function(color3)
         Library:ChangeColor(theme, color3)
+        if theme == "SchemeColor" then
+            print("CHANING SHCEME")
+            ColorSettings[1] = tostring(color3)
+        elseif theme == "Background" then
+            ColorSettings[2] = tostring(color3)
+        elseif theme == "Header" then
+            ColorSettings[3] = tostring(color3)
+        elseif theme == "TextColor" then
+            ColorSettings[4] = tostring(color3)
+        elseif theme == "ElementColor" then
+            ColorSettings[5] = tostring(color3)
+        end
+        
+        SaveSettings()
     end)
 end
+
 
 TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2\n Note: Will kill you", function()
     if workspace.Game:FindFirstChild("Map1") then
