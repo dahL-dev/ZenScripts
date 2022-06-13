@@ -54,6 +54,14 @@ local mobs = {} -- MOBS TABLE
 local npcs = {}
 local locations = {} 
 local meditationspots = {}
+local themes = {
+    SchemeColor = Color3.fromRGB(0,255,255),
+    Background = Color3.fromRGB(0, 0, 0),
+    Header = Color3.fromRGB(0, 0, 0),
+    TextColor = Color3.fromRGB(255,255,255),
+    ElementColor = Color3.fromRGB(20, 20, 20)
+}
+
 local isFarming = false
 getgenv().mob = nil -- SELECTED MOB
 getgenv().npc = nil -- SELECTED NPC
@@ -116,6 +124,7 @@ local Main = Window:NewTab("Main") -- CREATES THE MAIN TAB
 local Shadow = Window:NewTab("Shadow")
 local Raid = Window:NewTab("Raid")
 local Misc = Window:NewTab("Misc") -- CREATES THE MISC TAB
+local Customize = Window:NewTab("Customize")
 local Info = Window:NewTab("Info") -- CREATES THE INFO TAB
 
 local MobFarmSection = Main:NewSection("Mob Farm") -- CREATES THE MOB FARM SECTION
@@ -127,7 +136,7 @@ local TeleportSection2 = Misc:NewSection("Teleport Place")
 local textSection = Info:NewSection("Made by dahL")
 local MiscSection = Misc:NewSection("Misc")
 local KeybindSection = Misc:NewSection("Keybinds")
-
+local CustomizeSection = Customize:NewSection("Customize GUI")
 
 
 -- MAIN
@@ -164,9 +173,24 @@ local shadowdropdown = ShadowSection:NewDropdown("Choose shadow", "Chooses shado
     getgenv().shadow = v
 end)
 
+--[[local customizedropdown = CustomizeSection:NewDropdown("Choose Themes", "Chooses the theme of the GUI", themes, function(v)
+    getgenv().selectedT = v
+end)
+
+local changeTheme = CustomizeSection:NewButton("Change Theme","Changes the theme", function()
+    local Window = Library:CreateLib("dahL-hub", getgenv().selectedT)
+end)--]]
+
 MobFarmSection:NewSlider("Farm Distance", "Changes the distance you farm the enemy at", 17, 8, function(v) -- 500 (MaxValue) | 0 (MinValue)
     farmdistance = v
 end)
+
+
+for theme, color in pairs(themes) do
+    CustomizeSection:NewColorPicker(theme, "Change your "..theme, color, function(color3)
+        Library:ChangeColor(theme, color3)
+    end)
+end
 
 TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2\n Note: Will kill you", function()
     if workspace.Game:FindFirstChild("Map1") then
