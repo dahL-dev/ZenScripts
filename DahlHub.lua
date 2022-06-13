@@ -168,7 +168,7 @@ MobFarmSection:NewSlider("Farm Distance", "Changes the distance you farm the ene
     farmdistance = v
 end)
 
-TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2", function()
+TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2\n Note: Will kill you", function()
     if workspace.Game:FindFirstChild("Map1") then
         workspace.Game.Map1.Parent = game.ReplicatedStorage
         game.ReplicatedStorage.Map2.Parent = workspace.Game
