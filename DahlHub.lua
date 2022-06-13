@@ -50,27 +50,6 @@ game:GetService("RunService").Stepped:Connect(function()
 end);
 
 
-local function SaveSettings()
-    local JSON -- is nil
-    local HttpService = game:service('HttpService') 
-
-    JSON = HttpService:JSONEncode(getgenv().ColorCodes)
-
-    writefile('dahL-hub/GUISettings.txt',JSON)
-end
-
-local function LoadSettings()
-    local HttpService = game:service('HttpService')
-    
-    --use 'isfile' to check if we are reading the correct txt file
-    
-    if isfile('dahL-hub/GUISettings') then
-    --use 'readfile' to read 'TUTORIAL.txt' and decode it
-        getgenv().ColorCodes = HttpService:JSONDecode(readfile('dahL-hub/GUISettings.txt'))
-    end
-end
-
-LoadSettings()
 
 
 
@@ -227,20 +206,6 @@ end)
 for theme, color in pairs(GUISettings) do
     CustomizeSection:NewColorPicker(theme, "Change your "..theme, color, function(color3)
         Library:ChangeColor(theme, color3)
-        if theme == "SchemeColor" then
-            print("CHANING SHCEME")
-            ColorSettings[1] = tostring(color3)
-        elseif theme == "Background" then
-            ColorSettings[2] = tostring(color3)
-        elseif theme == "Header" then
-            ColorSettings[3] = tostring(color3)
-        elseif theme == "TextColor" then
-            ColorSettings[4] = tostring(color3)
-        elseif theme == "ElementColor" then
-            ColorSettings[5] = tostring(color3)
-        end
-        
-        SaveSettings()
     end)
 end
 
