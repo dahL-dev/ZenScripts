@@ -4,20 +4,14 @@ local LocalPlayer = Players.LocalPlayer
 local NPCs = workspace.Game.Players
 local punchType
 local combo = 1
-local nclip = false
 local lp = game.Players.LocalPlayer
-local ms = lp:GetMouse()
-local rm = getrawmetatable(game)
-local index = rm.__index
-local bv = Instance.new("BoolValue");
-bv.Value = false;
-setreadonly(rm,false)
+
 
 local function GetClosest() -- GETS CLOSEST ENEMY
     local Character = LocalPlayer.Character
     local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
     if not (HumanoidRootPart) then return end
-    local TargetDistance = 100
+    local TargetDistance = 250
     local Target
     
     for i,v in pairs(NPCs:GetChildren()) do
@@ -35,19 +29,28 @@ local function GetClosest() -- GETS CLOSEST ENEMY
 end
 
 -- NOCLIP
-rm.__index = function(self,j)
-   if tostring(self) == "Part" and tostring(j) == "Anchored" then
-       return index(bv,"Value")
-end
-   return index(self,j)
+getgenv().nclip = false
+getgenv().NoPlatformNoclip = false -- the patched platformnoclip unpatched thanks to the two lines below credits to Panda
+getgenv().CanCollide = true -- basic everyday noclip
+
+if setfflag then
+    setfflag("HumanoidParallelRemoveNoPhysics", "False") -- thank you panda your hot UwU
+    setfflag("HumanoidParallelRemoveNoPhysicsNoSimulate2", "False")
 end
 
-game:GetService("RunService").Stepped:Connect(function()
-   if nclip == true then
-       lp.Character.Head.CanCollide = false
-       lp.Character.Torso.CanCollide = false
-   end
-end);
+game:GetService("RunService").Stepped:Connect(
+    function()
+        if getgenv().nclip then
+            for i, v in pairs(lp.Character:GetChildren()) do
+                if v:IsA("BasePart") and getgenv().CanCollide then
+                    v.CanCollide = false-- boring old CanCollide Right?
+                elseif v:IsA("Humanoid") and getgenv().NoPlatformNoclip then
+                    v:ChangeState(11) -- sexy
+                end
+            end
+        end
+    end
+)
 
 
 
@@ -89,6 +92,7 @@ getgenv().punchspeed = nil -- SELECTED PUNCH SPEED
 getgenv().AutoEat = nil
 getgenv().AutoShake = nil 
 getgenv().farmdistance = nil
+getgenv().serverTime = true
 
 
 -- MOBS
@@ -102,11 +106,11 @@ end
 for _,v in ipairs(game:GetService("Workspace").Game.Trainers:GetChildren()) do -- LOOPS THROUGH ALL MOBS
     insert = true -- VALUE TO CHECK THE MOB
     for _,v2 in pairs(npcs) do if v2 == v.Name then insert = false end end -- CHECKS IF MOB IS ALREADY IN THE TABLE
-    if insert and v:FindFirstChild("Humanoid") then table.insert(npcs, v.Name) end -- IF THE MOB ISNT INSERTED THEN INSERT IT
+    if insert and v:FindFirstChild("HumanoidRootPart") then table.insert(npcs, v.Name) end -- IF THE MOB ISNT INSERTED THEN INSERT IT
 end
 
 -- LOCATION
-for _,v in ipairs(game:GetService("Workspace").TPLocation:GetChildren()) do -- LOOPS THROUGH ALL MOBS
+for _,v in ipairs(game:GetService("Workspace").Game.DoorTeleports:GetChildren()) do -- LOOPS THROUGH ALL MOBS
     insert = true -- VALUE TO CHECK THE MOB
     for _,v2 in pairs(locations) do if v2 == v.Name then insert = false end end -- CHECKS IF MOB IS ALREADY IN THE TABLE
     if insert then table.insert(locations, v.Name) end -- IF THE MOB ISNT INSERTED THEN INSERT IT
@@ -148,25 +152,35 @@ local MobFarmSection = Main:NewSection("Mob Farm") -- CREATES THE MOB FARM SECTI
 local RaidSection = Raid:NewSection("Raid")
 local CombatSection = Main:NewSection("Combat")
 local ShadowSection = Shadow:NewSection("Shadow Farm")
+local shadowImplantSection = Shadow:NewSection("Shadow Implant")
 local TeleportSection = Misc:NewSection("Teleport Trainers")
 local TeleportSection2 = Misc:NewSection("Teleport Place")
-local textSection = Info:NewSection("Made by dahL")
+local InfoSection = Info:NewSection("Made By DahL")
 local MiscSection = Misc:NewSection("Misc")
-local KeybindSection = Misc:NewSection("Keybinds")
 local CustomizeSection = Customize:NewSection("Customize GUI")
-
+local KeybindSection = Customize:NewSection("Keybinds")
 
 -- MAIN
+
+local serverTimer = lp.PlayerGui.MainGui.Main.Settings.Uptime
+
+local timerLabel = InfoSection:NewLabel(serverTimer.Text)
+
+local function updateTimer()
+    timerLabel:UpdateLabel(serverTimer.Text)
+end
+serverTimer.Changed:Connect(updateTimer)
+    
 
 KeybindSection:NewKeybind("Toggle UI", "toggles ui", Enum.KeyCode.RightControl, function()
 	Library:ToggleUI()
 end)
 
 KeybindSection:NewKeybind("Toggle Noclip", "Bind for Noclip", Enum.KeyCode.G, function()
-    if nclip == false then
-        nclip = true
-    elseif nclip == true then
-        nclip = false
+    if getgenv().nclip == false then
+        getgenv().nclip = true
+    elseif getgenv().nclip == true then
+        getgenv().nclip = false
     end
 end)
 
@@ -210,19 +224,7 @@ for theme, color in pairs(GUISettings) do
 end
 
 
-TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2\n Note: Will kill you", function()
-    if workspace.Game:FindFirstChild("Map1") then
-        workspace.Game.Map1.Parent = game.ReplicatedStorage
-        game.ReplicatedStorage.Map2.Parent = workspace.Game
-        wait()
-        game.Players.LocalPlayer.Character.Humanoid.Health = 0
-    elseif workspace.Game:FindFirstChild("Map2") then
-        workspace.Game.Map2.Parent = game.ReplicatedStorage
-        game.ReplicatedStorage.Map1.Parent = workspace.Game
-        wait()
-        game.Players.LocalPlayer.Character.Humanoid.Health = 0
-    end
-end)
+
 
 
 MiscSection:NewToggle("Auto eat", "Toggles auto eat", function(v)
@@ -284,11 +286,35 @@ MiscSection:NewToggle("Auto Shake", "Buys Protain shakes for xp boost", function
 end)
 
 
+MiscSection:NewToggle("Auto Trinket", "Auto pickups trinkets around the map", function(v)
+    getgenv().AutoTrinket = v
+    local TrinketGui = lp.PlayerGui.Artifact
+    while wait() do
+       if AutoTrinket then
+            for _, trinket in pairs(game.Workspace.Game.Trinkets.Spawned:GetChildren()) do
+                if trinket == nil then return else
+                    if trinket:FindFirstChild("TouchInterest") then
+                    lp.Character.HumanoidRootPart.CFrame = trinket.CFrame * CFrame.new(0,3,0)
+                    firesignal(TrinketGui.main.yes.MouseButton1Down)
+                end
+                end
+                
+            end
+        else
+            break
+        end
+    end
+end)
+
 -- MOB FARM SECTION
 MobFarmSection:NewToggle("Mob Farm", "Toggles autofarm for mobs", function(v) -- CREATES THE START / STOP TOGGLE
     getgenv().autofarmmobs = v
     while wait() do -- INFINITE LOOP
-        if getgenv().autofarmmobs == false then workspace:FindFirstChild("AirWalk"):Destroy() return end -- IF THE TOGGLE IS OFF THEN STOP THE LOOP
+        if getgenv().autofarmmobs == false then -- IF THE TOGGLE IS OFF THEN STOP THE LOOP
+            workspace:FindFirstChild("AirWalk"):Destroy()
+            getgenv().nclip = false 
+            return 
+        end 
         if getgenv().mob == nil then -- IF THE MOB ISNT SELECTED
             game.StarterGui:SetCore("SendNotification", { -- SHOW NOTIFIACTION
                 Title = "Error!", -- NOTIFICACTION LABEL
@@ -326,7 +352,7 @@ MobFarmSection:NewToggle("Mob Farm", "Toggles autofarm for mobs", function(v) --
                 airwalk.Transparency = 1
             end
            
-            
+            getgenv().nclip = true
          
             while wait() do
                 mob = game:GetService("Workspace").Game.Players:FindFirstChild(getgenv().mob)
@@ -353,7 +379,7 @@ RaidSection:NewToggle("Yasha Ape", "Starts Yasha Ape quest", function(v)
     while wait() do
         if autoYasha == false then
             workspace:FindFirstChild("AirWalk"):Destroy()
-            nclip = false
+            getgenv().nclip = false
             break;
         else
             while isFarming == false do
@@ -373,7 +399,7 @@ RaidSection:NewToggle("Yasha Ape", "Starts Yasha Ape quest", function(v)
                             getgenv().foundMob = v.HumanoidRootPart
                             print(foundMob)
                             isFarming = true
-                            nclip = true
+                            getgenv().nclip = true
                         end
                     end
                     
@@ -400,12 +426,81 @@ RaidSection:NewToggle("Yasha Ape", "Starts Yasha Ape quest", function(v)
     end
 end)
 
+RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
+    getgenv().autoBossRush = v
+    local rushActive = false
+    local Apple = game.Workspace.Game.Trainers:FindFirstChild("Apple")
+    local TeleportPad = game.Workspace:FindFirstChild("SpireBox")
+    local clickd = Apple:FindFirstChild("ClickDetector")
+    local Dialogue = game.Players.LocalPlayer.PlayerGui.Dialogue
+    local Wave = string.gsub(lp.PlayerGui.MainGui.Main.Alert.Text, "%D", "")
+    local closestBoss
+    while wait() do
+        closestBoss = GetClosest()
+        if autoBossRush then
+            if rushActive == false then
+                if TeleportPad.BillboardGui.Enabled == false then
+                    lp.Character.HumanoidRootPart.CFrame = Apple.HumanoidRootPart.CFrame * CFrame.new(0,0,-3)
+                    fireclickdetector(clickd)
+                    for i,v in pairs(getconnections(Dialogue.Path1.MouseButton1Click)) do
+                         v:Fire()
+                    end
+                else
+                    lp.Character.HumanoidRootPart.CFrame = TeleportPad.CFrame
+                    if TeleportPad.BillboardGui.TextLabel.Text == "0" then
+                        rushActive = true
+                    end
+                end
+               
+            else
+                if workspace:FindFirstChild("AirWalk") then
+                    
+                else
+                    getgenv().airwalk = Instance.new("Part", workspace)
+                    airwalk.Size = Vector3.new(10,1,10)
+                    airwalk.Name = "AirWalk"
+                    airwalk.Anchored = true
+                    airwalk.Transparency = 1
+                end
+                
+                
+                
+                while wait() do
+                    if closestBoss == nil then
+                        GetClosest()
+                        closestBoss = GetClosest()
+                        wait()
+                    else
+                        getgenv().nclip = true
+                        airwalk.CFrame = closestBoss.HumanoidRootPart.CFrame * CFrame.new(0,farmdistance,0)
+                        lp.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.9,0)
+                        if Wave == "25" then
+                            lp.Character.Humanoid.Health = 0
+                        end
+                        if lp.Character.Humanoid.Health <= 0 then 
+                            rushActive = false 
+                        end
+                        if closestBoss:FindFirstChild("Humanoid") then
+                            if closestBoss.Humanoid.Health == 0 then wait(0.1) closestBoss:Destroy() break; end -- IF THE MOB IS DEAD THEN JUST DESTROY IT FOR FASTER FARMING
+                        end
+                    end
+                    wait()
+                end
+            end
+        else
+            getgenv().nclip = false
+            workspace:FindFirstChild("AirWalk"):Destroy()
+            break;
+        end
+    end
+end)
+
 -- COMBAT SECTION
 
-local Closest
 CombatSection:NewToggle("Auto Punch", "Enables auto punch for autofarm", function(v)
     getgenv().autopunch = v
     local index1 = 1
+    local Closest
     while wait() do
          Closest = GetClosest()
         if getgenv().autopunch == false then break; end
@@ -462,7 +557,7 @@ ShadowSection:NewToggle("Start farm", "Enables shadow auto farm", function(v)
     while wait() do
         if getgenv().shadowfarm == false then
             workspace:FindFirstChild("AirWalk"):Destroy()
-            nclip = false
+            getgenv().nclip = false
             return
         end
         if getgenv().shadow == nil then
@@ -489,22 +584,16 @@ ShadowSection:NewToggle("Start farm", "Enables shadow auto farm", function(v)
                              v:Fire()
                         end
                         for _, v in pairs(game.Workspace.Game.Players:GetChildren()) do
-                            if string.find(v.Name, "Shadow") or string.find(v.Name, "Yujiro") then
+                            if string.find(v.Name, "Shadow") or string.find(v.Name, "Yujiro") or string.find(v.Name, "Musashi") then
                                 if string.find(v.Name, "Yujiro") then
                                     YujiroSpecial = true
                                 else
                                     YujiroSpecial = false
                                 end
-                                print("YES")
                                 getgenv().foundMob = v.HumanoidRootPart
                                 print(foundMob)
                                 isFarming = true
-                                nclip = true
-                                if nclip == true then
-                                   print("Noclip is on.")
-                                else
-                                   print("Noclip if off.")
-                                end
+                                getgenv().nclip = true
                             end
                         end
                     end
@@ -522,13 +611,12 @@ ShadowSection:NewToggle("Start farm", "Enables shadow auto farm", function(v)
                 airwalk.Transparency = 1
             end
             if YujiroSpecial == true then
-                local HealthP = game.Players.LocalPlayer.Character.Humanoid.MaxHealth * 0.15
+                local HealthP = game.Players.LocalPlayer.Character.Humanoid.MaxHealth * 0.25
                 if game.Players.LocalPlayer.Character.Humanoid.Health <= game.Players.LocalPlayer.Character.Humanoid.MaxHealth - HealthP then
                     airwalk.CFrame = foundMob.CFrame * CFrame.new(0,farmdistance,0)
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.9,0)
                     if foundMob.Parent.Humanoid.Health == 0 then wait(5) isFarming = false end
                 else
-                    print("GetDamaged")
                     airwalk.CFrame = foundMob.CFrame * CFrame.new(0,-4,4)
                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.9,0)
                 end
@@ -542,6 +630,19 @@ ShadowSection:NewToggle("Start farm", "Enables shadow auto farm", function(v)
     end
 end)
 
+
+shadowImplantSection:NewToggle("Auto shadow implant", "Auto get shadow implant\n  Note: You have to be in prison server", function(v)
+    getgenv().AutoShadowImplant = v
+    
+    while wait() do
+       if AutoShadowImplant then
+            
+        else
+            break;
+        end
+    end
+end)
+
 --TeleportSection
 TeleportSection:NewButton("Teleport", "Teleports to the npc you selected", function(v)
     local TPNPC = game:GetService("Workspace").Game.Trainers:FindFirstChild(getgenv().npc)
@@ -549,10 +650,23 @@ TeleportSection:NewButton("Teleport", "Teleports to the npc you selected", funct
 end)
 
 TeleportSection2:NewButton("Teleport", "Teleports to the location you selected", function(v)
-    local TPLOCATION = game:GetService("Workspace").TPLocation:FindFirstChild(getgenv().location)
+    local TPLOCATION = game:GetService("Workspace").Game.DoorTeleports:FindFirstChild(getgenv().location)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = TPLOCATION.CFrame
 end)
 
+TeleportSection:NewButton("TP City 1/2", "Quickly tp between city 1 or 2\n Note: Will kill you", function()
+    if workspace.Game:FindFirstChild("Map1") then
+        workspace.Game.Map1.Parent = game.ReplicatedStorage
+        game.ReplicatedStorage.Map2.Parent = workspace.Game
+        wait()
+        game.Players.LocalPlayer.Character.Humanoid.Health = 0
+    elseif workspace.Game:FindFirstChild("Map2") then
+        workspace.Game.Map2.Parent = game.ReplicatedStorage
+        game.ReplicatedStorage.Map1.Parent = workspace.Game
+        wait()
+        game.Players.LocalPlayer.Character.Humanoid.Health = 0
+    end
+end)
 
 
 
@@ -594,5 +708,4 @@ game:GetService("Workspace").Game.Players.ChildRemoved:Connect(function() -- WHE
    
     mobdropdown:Refresh(mobs)
 end)
-
 
