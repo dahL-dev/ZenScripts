@@ -165,7 +165,7 @@ local KeybindSection = Customize:NewSection("Keybinds")
 
 -- MAIN
 
-local serverTimer = lp.PlayerGui.MainGui.Main.Settings.Uptime
+local serverTimer = game.Players.LocalPlayer.PlayerGui.MainGui.Main.Settings.Uptime
 local timerLabel = InfoSection:NewLabel(serverTimer.Text)
 local function updateTimer()
     timerLabel:UpdateLabel(serverTimer.Text)
@@ -463,6 +463,7 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
                 else
                     lp.Character.HumanoidRootPart.CFrame = TeleportPad.CFrame
                     if TeleportPad.BillboardGui.TextLabel.Text == "0" then
+                        wait(2)
                         getgenv().rushActive = true
                     end
                 end
@@ -488,6 +489,7 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
                         getgenv().closestBoss = GetClosest()
                         wait()
                     else
+                        
                         getgenv().nclip = true
                         airwalk.CFrame = getgenv().closestBoss.HumanoidRootPart.CFrame * CFrame.new(0,farmdistance,0)
                         lp.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.8,0)
@@ -512,21 +514,25 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
     end
 end)
 
-RaidMiscSection:NewToggle("Auto Dodge lethal attack", "Auto dodges lethal attacks in boss rush", function(v)
+RaidMiscSection:NewToggle("Auto Dodge Jason", "Auto dodges Jasons lethal attack in boss rush\n Requires Jedi", function(v)
     getgenv().autoDodge = v
     local skillsFolder = game:GetService("Players").LocalPlayer.Data.Skills
     while wait() do
         if autoDodge then
-                if getgenv().closestBoss.Torso.Transparency == 1 then
-                    print("JASON!!")
-                    repeat wait() until getgenv().closestBoss.Torso.Transparency ~= 1
-                    if skillsFolder.Skill3.OnCooldown.Value == true then
-                        game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill5.Value)
-                    else
-                        game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill2.Value)
+            if getgenv().closestBoss == nil then
+                wait()
+            else
+                if getgenv().closestBoss.Name == "Jason Voorhees" then
+                    if getgenv().closestBoss.Torso.Transparency == 1 then
+                        print("JASON DEATH MOVE!!")
+                        repeat wait() until getgenv().closestBoss.Torso.Transparency ~= 1
+                        print("Using Counter")
+                        game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill1.Value)
+                        wait()
                     end
-                    wait()
                 end
+               
+            end
         else
            break; 
         end
@@ -552,14 +558,15 @@ RaidMiscSection:NewToggle("Auto Boost", "Auto uses awakening and heal\n Note: Re
                     game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer("Rage")
                     game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(unpack(args))
                     wait(1)
+                    
                 end
                 
-                if game.Players.LocalPlayer.Character.Humanoid.Health <= game.Players.LocalPlayer.Character.Humanoid.MaxHealth *0.80 then
-                    game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill3.Value)
-                    wait(1)
-                end
+               -- if game.Players.LocalPlayer.Character.Humanoid.Health <= game.Players.LocalPlayer.Character.Humanoid.MaxHealth *0.80 then
+                  --  game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill3.Value)
+                --    wait(1)
+             --   end
             else
-                break;
+                wait()
             end
         else
            break; 
