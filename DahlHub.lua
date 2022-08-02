@@ -4,7 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local NPCs = workspace.Game.Players
 local punchType
 local combo = 1
-local lp = game.Players.LocalPlayer
+local lp = game:GetService("Players").LocalPlayer
 
 
 local function GetClosest() -- GETS CLOSEST ENEMY
@@ -54,7 +54,9 @@ game:GetService("RunService").Stepped:Connect(
 
 
 
-
+for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
+v:Disable()
+end
 
 
 getgenv().ColorSettings = {
@@ -150,6 +152,7 @@ local Info = Window:NewTab("Info") -- CREATES THE INFO TAB
 
 local MobFarmSection = Main:NewSection("Mob Farm") -- CREATES THE MOB FARM SECTION
 local RaidSection = Raid:NewSection("Raid")
+local RaidMiscSection = Raid:NewSection("Misc")
 local CombatSection = Main:NewSection("Combat")
 local ShadowSection = Shadow:NewSection("Shadow Farm")
 local shadowImplantSection = Shadow:NewSection("Shadow Implant")
@@ -163,18 +166,18 @@ local KeybindSection = Customize:NewSection("Keybinds")
 -- MAIN
 
 local serverTimer = lp.PlayerGui.MainGui.Main.Settings.Uptime
-
 local timerLabel = InfoSection:NewLabel(serverTimer.Text)
-
 local function updateTimer()
     timerLabel:UpdateLabel(serverTimer.Text)
 end
+
 serverTimer.Changed:Connect(updateTimer)
     
 
 KeybindSection:NewKeybind("Toggle UI", "toggles ui", Enum.KeyCode.RightControl, function()
 	Library:ToggleUI()
 end)
+
 
 KeybindSection:NewKeybind("Toggle Noclip", "Bind for Noclip", Enum.KeyCode.G, function()
     if getgenv().nclip == false then
@@ -244,6 +247,7 @@ MiscSection:NewToggle("Auto eat", "Toggles auto eat", function(v)
                 end
                 
             else
+                wantBuy = true
                 if wantBuy then
                     local args = {
                     [1] = workspace.Game.Shop.Restaurant:FindFirstChild("Noodle Bowl")}
@@ -426,19 +430,30 @@ RaidSection:NewToggle("Yasha Ape", "Starts Yasha Ape quest", function(v)
     end
 end)
 
+getgenv().WaveLabel = nil 
+
+function updateWave()
+    if getgenv().Wave == nil then
+        return
+    else
+        getgenv().WaveLabel:UpdateLabel("Bosses Defeated: "..getgenv().Wave)
+    end
+    
+end
+
 RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
     getgenv().autoBossRush = v
-    local rushActive = false
+    getgenv().rushActive = false
     local Apple = game.Workspace.Game.Trainers:FindFirstChild("Apple")
     local TeleportPad = game.Workspace:FindFirstChild("SpireBox")
     local clickd = Apple:FindFirstChild("ClickDetector")
     local Dialogue = game.Players.LocalPlayer.PlayerGui.Dialogue
-    local Wave = string.gsub(lp.PlayerGui.MainGui.Main.Alert.Text, "%D", "")
-    local closestBoss
+    getgenv().Wave = "Boss Progress (Activates when boss rush)"
+    getgenv().closestBoss = nil
     while wait() do
-        closestBoss = GetClosest()
+        getgenv().closestBoss = GetClosest()
         if autoBossRush then
-            if rushActive == false then
+            if getgenv().rushActive == false then
                 if TeleportPad.BillboardGui.Enabled == false then
                     lp.Character.HumanoidRootPart.CFrame = Apple.HumanoidRootPart.CFrame * CFrame.new(0,0,-3)
                     fireclickdetector(clickd)
@@ -448,7 +463,7 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
                 else
                     lp.Character.HumanoidRootPart.CFrame = TeleportPad.CFrame
                     if TeleportPad.BillboardGui.TextLabel.Text == "0" then
-                        rushActive = true
+                        getgenv().rushActive = true
                     end
                 end
                
@@ -466,22 +481,24 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
                 
                 
                 while wait() do
-                    if closestBoss == nil then
+                    getgenv().Wave = string.gsub(game.Players.LocalPlayer.PlayerGui.MainGui.Main.Alert.Text, "%D", "")
+                    updateWave()
+                    if getgenv().closestBoss == nil and getgenv().rushActive == true then
                         GetClosest()
-                        closestBoss = GetClosest()
+                        getgenv().closestBoss = GetClosest()
                         wait()
                     else
                         getgenv().nclip = true
-                        airwalk.CFrame = closestBoss.HumanoidRootPart.CFrame * CFrame.new(0,farmdistance,0)
-                        lp.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.9,0)
-                        if Wave == "25" then
+                        airwalk.CFrame = getgenv().closestBoss.HumanoidRootPart.CFrame * CFrame.new(0,farmdistance,0)
+                        lp.Character.HumanoidRootPart.CFrame = airwalk.CFrame * CFrame.new(0,2.8,0)
+                        if getgenv().Wave == "25" then
                             lp.Character.Humanoid.Health = 0
                         end
                         if lp.Character.Humanoid.Health <= 0 then 
-                            rushActive = false 
+                            getgenv().rushActive = false 
                         end
-                        if closestBoss:FindFirstChild("Humanoid") then
-                            if closestBoss.Humanoid.Health == 0 then wait(0.1) closestBoss:Destroy() break; end -- IF THE MOB IS DEAD THEN JUST DESTROY IT FOR FASTER FARMING
+                        if getgenv().closestBoss:FindFirstChild("Humanoid") then
+                            if getgenv().closestBoss.Humanoid.Health == 0 then wait(0.1) getgenv().closestBoss:Destroy() break; end -- IF THE MOB IS DEAD THEN JUST DESTROY IT FOR FASTER FARMING
                         end
                     end
                     wait()
@@ -495,6 +512,70 @@ RaidSection:NewToggle("Boss rush", "Auto farrms the boss rush raid", function(v)
     end
 end)
 
+RaidMiscSection:NewToggle("Auto Dodge lethal attack", "Auto dodges lethal attacks in boss rush", function(v)
+    getgenv().autoDodge = v
+    local skillsFolder = game:GetService("Players").LocalPlayer.Data.Skills
+    while wait() do
+        if autoDodge then
+                if getgenv().closestBoss.Torso.Transparency == 1 then
+                    print("JASON!!")
+                    repeat wait() until getgenv().closestBoss.Torso.Transparency ~= 1
+                    if skillsFolder.Skill3.OnCooldown.Value == true then
+                        game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill5.Value)
+                    else
+                        game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill2.Value)
+                    end
+                    wait()
+                end
+        else
+           break; 
+        end
+    end
+end)
+
+RaidMiscSection:NewToggle("Auto Boost", "Auto uses awakening and heal\n Note: Requires Ohma Niko", function(v)
+    getgenv().autoBoostSkill = v
+    local skillsFolder = game:GetService("Players").LocalPlayer.Data.Skills
+    -- Script generated by SimpleSpy - credits to exx#9394
+
+    local args = {
+        [1] = "Implant",
+        [2] = "Heart Pump"
+    }
+
+    while wait() do
+        if autoBoostSkill then
+            if getgenv().rushActive then
+                if game.Players.LocalPlayer.Character.Humanoid.Health <= game.Players.LocalPlayer.Character.Humanoid.MaxHealth * 0.50 then
+                    
+                else
+                    game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer("Rage")
+                    game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(unpack(args))
+                    wait(1)
+                end
+                
+                if game.Players.LocalPlayer.Character.Humanoid.Health <= game.Players.LocalPlayer.Character.Humanoid.MaxHealth *0.80 then
+                    game:GetService("ReplicatedStorage").Remotes.ClientToServer.Skill:FireServer(skillsFolder.Skill3.Value)
+                    wait(1)
+                end
+            else
+                break;
+            end
+        else
+           break; 
+        end
+    end
+end)
+
+getgenv().WaveLabel = RaidMiscSection:NewLabel("Boss Progress (Activates when boss rush)")
+
+
+
+
+
+
+
+
 -- COMBAT SECTION
 
 CombatSection:NewToggle("Auto Punch", "Enables auto punch for autofarm", function(v)
@@ -502,8 +583,8 @@ CombatSection:NewToggle("Auto Punch", "Enables auto punch for autofarm", functio
     local index1 = 1
     local Closest
     while wait() do
-         Closest = GetClosest()
         if getgenv().autopunch == false then break; end
+        Closest = GetClosest()
         if getgenv().punchspeed == nil then
             game.StarterGui:SetCore("SendNotification", { -- SHOW NOTIFIACTION
                 Title = "Error!", -- NOTIFICACTION LABEL
@@ -514,9 +595,9 @@ CombatSection:NewToggle("Auto Punch", "Enables auto punch for autofarm", functio
             getgenv().autopunch = false
             return
         end
-        if getgenv().autopunch == false then break; end
-    
+        
         if Closest == nil then
+            wait(1)
             GetClosest()
             Closest = GetClosest()
             wait()
